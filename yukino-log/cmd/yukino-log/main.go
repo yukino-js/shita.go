@@ -11,7 +11,7 @@ import (
 	"os"
 	"path/filepath"
 
-	yukino_log "github.com/yukino-js/yukino-log"
+	yukino_log "github.com/yukino-js/shita.go/yukino-log"
 )
 
 func main() {

@@ -21,7 +21,7 @@ import (
 	"sync"
 	"time"
 
-	skiplist "github.com/yukino-js/brave/yukino-skiplist"
+	skiplist "github.com/yukino-js/shita.go/yukino-skiplist"
 )
 
 // demoMaxLevel is a small lane cap and uses the same numeric argument as the

@@ -12,7 +12,7 @@ copy(buf, []byte("payload"))
 pool.Free(buf)
 ```
 
-Import path: `github.com/yukino-js/brave/yukino-memory-pool`.
+Import path: `github.com/yukino-js/shita.go/yukino-memory-pool`.
 
 ## Layout
 

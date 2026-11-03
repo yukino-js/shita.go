@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	skiplist "github.com/yukino-js/brave/yukino-skiplist"
+	skiplist "github.com/yukino-js/shita.go/yukino-skiplist"
 )
 
 func ExampleNew() {

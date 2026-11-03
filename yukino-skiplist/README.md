@@ -9,7 +9,7 @@ The package requires Go 1.23 or later. It uses only the standard library.
 ## Install
 
 ```bash
-go get github.com/yukino-js/brave/yukino-skiplist
+go get github.com/yukino-js/shita.go/yukino-skiplist
 ```
 
 ## Usage

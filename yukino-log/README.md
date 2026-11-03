@@ -7,12 +7,12 @@ and corrects the defects listed below.
 
 The package uses only the standard library. It requires Go 1.26.5 or later.
 
-Import path: `github.com/yukino-js/yukino-log`.
+Import path: `github.com/yukino-js/shita.go/yukino-log`.
 
 ## Install
 
 ```bash
-go get github.com/yukino-js/yukino-log
+go get github.com/yukino-js/shita.go/yukino-log
 ```
 
 ## Usage
