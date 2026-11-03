@@ -1,0 +1,46 @@
+# Legacy code
+.legacy
+
+# Build artifacts
+bin/
+dist/
+*.exe
+*.test
+*.out
+*.tmp
+
+# Coverage and profiling reports
+coverage.*
+*.coverprofile
+cpu.pprof
+mem.pprof
+
+# Logs and dumps
+*.log
+*.dump
+
+# Editor and OS noise
+.idea/
+.vscode/
+.DS_Store
+
+# yukino-kv runtime data
+yukino-kv/**/data/
+yukino-kv/**/test.conf
+yukino-kv/**/demo.conf
+yukino-kv/**/raftstatePersist*.txt
+yukino-kv/**/snapshotPersist*.txt
+
+# yukino-cloud-storage runtime artifacts
+yukino-cloud-storage/deep_storage/
+yukino-cloud-storage/low_storage/
+yukino-cloud-storage/logfile/
+yukino-cloud-storage/temp/
+yukino-cloud-storage/storage.data
+yukino-cloud-storage/vendor/
+
+# yukino-log runtime artifacts
+yukino-log/logs/
+
+# yukino-skiplist local persistence
+yukino-skiplist/store/

@@ -4,7 +4,7 @@ go 1.26.5
 
 require (
 	github.com/hangtiancheng/yukino.go/libs/yukino_http v0.0.1
-	github.com/hangtiancheng/yukino.go/libs/yukino_rpc v0.0.1
+	github.com/hangtiancheng/yukino.go/libs/yukino_rpc v0.0.2
 )
 
 require (
