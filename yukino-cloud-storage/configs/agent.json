@@ -1,0 +1,9 @@
+{
+  "server_url": "http://127.0.0.1:8081",
+  "low_storage_dir": "./low_storage/",
+  "deep_storage_dir": "./deep_storage/",
+  "state_file": "./storage.dat",
+  "scan_interval": "1s",
+  "quiet_period": "5s",
+  "timeout": "30s"
+}

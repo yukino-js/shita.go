@@ -1,0 +1,16 @@
+# Binaries
+/bin/
+*.exe
+*.test
+*.out
+
+# Runtime artifacts
+/deep_storage/
+/low_storage/
+/logfile/
+/temp/
+storage.data
+*.log
+
+# Go
+/vendor/

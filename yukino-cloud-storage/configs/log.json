@@ -1,0 +1,11 @@
+{
+  "buffer_size": 1048576,
+  "threshold": 16777216,
+  "linear_growth": 1048576,
+  "flush_log": 1,
+  "backup_addr": "",
+  "backup_port": 8080,
+  "thread_count": 1,
+  "level": "DEBUG",
+  "include_goroutine_id": true
+}

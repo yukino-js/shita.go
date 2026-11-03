@@ -1,6 +1,8 @@
-go 1.26.0
+go 1.26.5
 
 use (
+	./yukino-cloud-storage
+	./yukino-kv
 	./yukino-log
 	./yukino-memory-pool
 	./yukino-skiplist
