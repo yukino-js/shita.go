@@ -152,5 +152,5 @@ go test -race ./...
 The demo writes one line to the terminal and the rest under `logs/`:
 
 ```bash
-go run ./cmd/yukino_log-demo -n 1000 -roll 1048576
+go run ./cmd/yukino-log -n 1000 -roll 1048576
 ```

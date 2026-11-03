@@ -188,7 +188,7 @@ go test ./...
 go test -race ./...
 go test -fuzz=FuzzAllocFree -fuzztime=10s
 go test -bench=. -benchmem
-go run ./cmd/yukino_mempool-demo
+go run ./cmd/memory-pool
 ```
 
 The demo follows the C++ performance driver (small loop, concurrent mix,

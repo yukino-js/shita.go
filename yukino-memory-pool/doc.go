@@ -42,11 +42,4 @@
 // while the block still holds the address. Small blocks also stay reachable
 // from the pool until they are freed and their span is released, which is the
 // point of the cache.
-//
-// # Relationship to the C++ original
-//
-// This package is a Go port of memory-pool v3 by 程序员Carl
-// (https://github.com/youngyangyang04/memory-pool). The upstream tree does not
-// ship a licence file. Behaviour that was undefined or simply wrong in that
-// tree is fixed here; see the "Migration notes" section of the README.
 package yukino_mempool

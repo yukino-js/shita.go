@@ -107,7 +107,7 @@ func TestDumpFollowsListOrder(t *testing.T) {
 func TestLegacyDumpOrdersKeys(t *testing.T) {
 	// Byte-for-byte sample of Skiplist-CPP/store/dumpFile. The values include
 	// the semicolons that were stored, and the keys are not sorted.
-	const legacy = "1:a;\n19:yang;\n3:b;\n7:c;\n8:sun;\n9:xiu;\n"
+	const legacy = "1:a;\n19:tian;\n3:b;\n7:c;\n8:hang;\n9:cheng;\n"
 	format := NewFormat(IntCodec(), StringCodec())
 	loaded, err := Load[int, string](strings.NewReader(legacy), format)
 	if err != nil {
@@ -117,9 +117,9 @@ func TestLegacyDumpOrdersKeys(t *testing.T) {
 		{Key: 1, Value: "a;"},
 		{Key: 3, Value: "b;"},
 		{Key: 7, Value: "c;"},
-		{Key: 8, Value: "sun;"},
-		{Key: 9, Value: "xiu;"},
-		{Key: 19, Value: "yang;"},
+		{Key: 8, Value: "hang;"},
+		{Key: 9, Value: "cheng;"},
+		{Key: 19, Value: "tian;"},
 	}
 	if !slices.Equal(loaded.Snapshot(), want) {
 		t.Fatalf("snapshot = %#v", loaded.Snapshot())
