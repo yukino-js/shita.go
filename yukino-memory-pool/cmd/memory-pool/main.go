@@ -1,4 +1,4 @@
-// Command mempool-demo times the pool against make, using the same shapes as
+// Command memory-pool times the pool against make, using the same shapes as
 // the C++ v3 performance test: a small-object loop, a concurrent mix, and a
 // mixed-size loop.
 //
@@ -17,7 +17,7 @@ import (
 	"sync"
 	"time"
 
-	mempool "github.com/yukino-js/brave/yukino-memory-pool"
+	yukino_mempool "github.com/yukino-js/brave/yukino-memory-pool"
 )
 
 func main() {
@@ -57,7 +57,7 @@ func report(label string, elapsed time.Duration) {
 }
 
 func warmup() {
-	pool := mempool.New()
+	pool := yukino_mempool.New()
 	held := make([][]byte, 0, 5000)
 	for i := 0; i < 1000; i++ {
 		for _, size := range []int{32, 64, 128, 256, 512} {
@@ -73,7 +73,7 @@ func warmup() {
 }
 
 func timeSmallPool(n int) time.Duration {
-	pool := mempool.New()
+	pool := yukino_mempool.New()
 	held := make([][]byte, 0, n)
 	start := time.Now()
 	for i := 0; i < n; i++ {
@@ -110,7 +110,7 @@ func timeSmallMake(n int, collect bool) time.Duration {
 }
 
 func timeConcurrent(usePool bool, workers, ops int) time.Duration {
-	pool := mempool.New()
+	pool := yukino_mempool.New()
 	start := time.Now()
 	var wg sync.WaitGroup
 	wg.Add(workers)
@@ -150,7 +150,7 @@ func timeConcurrent(usePool bool, workers, ops int) time.Duration {
 }
 
 func timeMixed(usePool bool, n int) time.Duration {
-	pool := mempool.New()
+	pool := yukino_mempool.New()
 	sizes := []int{16, 32, 64, 128, 256, 512, 1024, 2048}
 	r := rand.New(rand.NewPCG(7, 11))
 	held := make([][]byte, 0, n)

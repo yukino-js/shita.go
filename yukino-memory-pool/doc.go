@@ -1,4 +1,4 @@
-// Package mempool is a concurrent size-class allocator for small byte buffers.
+// Package yukino_mempool is a concurrent size-class allocator for small byte buffers.
 //
 // # Overview
 //
@@ -49,4 +49,4 @@
 // (https://github.com/youngyangyang04/memory-pool). The upstream tree does not
 // ship a licence file. Behaviour that was undefined or simply wrong in that
 // tree is fixed here; see the "Migration notes" section of the README.
-package mempool
+package yukino_mempool

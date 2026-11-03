@@ -1,4 +1,4 @@
-package mempool
+package yukino_mempool
 
 import "fmt"
 
@@ -52,18 +52,18 @@ func init() {
 	previous := 0
 	for _, size := range classSizes {
 		if size <= previous || size%alignment != 0 || size > MaxSmall {
-			panic(fmt.Sprintf("mempool: size class %d is not a strictly increasing multiple of %d within MaxSmall", size, alignment))
+			panic(fmt.Sprintf("yukino_mempool: size class %d is not a strictly increasing multiple of %d within MaxSmall", size, alignment))
 		}
 		// Classes above one default span are page multiples, so a span of
 		// that class holds an integral number of blocks and a block never
 		// starts off a page boundary.
 		if size > spanPages*pageSize && size%pageSize != 0 {
-			panic(fmt.Sprintf("mempool: size class %d above one span is not a multiple of the page size", size))
+			panic(fmt.Sprintf("yukino_mempool: size class %d above one span is not a multiple of the page size", size))
 		}
 		previous = size
 	}
 	if previous != MaxSmall {
-		panic("mempool: size class table must end at MaxSmall")
+		panic("yukino_mempool: size class table must end at MaxSmall")
 	}
 
 	classIndex = make([]uint16, MaxSmall+1)
@@ -72,7 +72,7 @@ func init() {
 		for classSizes[class] < n {
 			class++
 			if class == len(classSizes) {
-				panic("mempool: size class table does not cover MaxSmall")
+				panic("yukino_mempool: size class table does not cover MaxSmall")
 			}
 		}
 		classIndex[n] = uint16(class)

@@ -6,7 +6,7 @@ a size class and satisfied from three caches. Larger requests are ordinary
 `make` slices retained by the pool until `Free`.
 
 ```go
-pool := mempool.New()
+pool := yukino_mempool.New()
 buf := pool.Alloc(24) // len 24, cap 32
 copy(buf, []byte("payload"))
 pool.Free(buf)
@@ -188,11 +188,10 @@ go test ./...
 go test -race ./...
 go test -fuzz=FuzzAllocFree -fuzztime=10s
 go test -bench=. -benchmem
-go run ./cmd/mempool-demo
+go run ./cmd/yukino_mempool-demo
 ```
 
 The demo follows the C++ performance driver (small loop, concurrent mix,
 mixed sizes) and prints `make` both with and without a forced collection.
 The runtime allocator is heavily tuned for the sizes this pool serves; the
 demo is a comparison, not a claim that the pool is faster than `make`.
-

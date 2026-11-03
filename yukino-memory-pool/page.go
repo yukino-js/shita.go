@@ -1,4 +1,4 @@
-package mempool
+package yukino_mempool
 
 import (
 	"fmt"
@@ -63,7 +63,7 @@ func (p *pageCache) allocate(npages int) *span {
 // them; the tail is not published, because no block in it has been handed out.
 func (p *pageCache) splitOff(s *span, npages int) {
 	if len(s.mem) != s.npages*pageSize {
-		panic("mempool: idle span length does not match its page count")
+		panic("yukino_mempool: idle span length does not match its page count")
 	}
 	cut := npages * pageSize
 	total := len(s.mem)
@@ -72,7 +72,7 @@ func (p *pageCache) splitOff(s *span, npages int) {
 
 	restBase := s.base + uintptr(cut)
 	if uintptr(unsafe.Pointer(unsafe.SliceData(restMem))) != restBase {
-		panic("mempool: split produced a non-contiguous tail")
+		panic("yukino_mempool: split produced a non-contiguous tail")
 	}
 	rest := &span{
 		mem:    restMem,

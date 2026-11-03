@@ -1,4 +1,4 @@
-package mempool
+package yukino_mempool
 
 import (
 	"errors"
@@ -104,7 +104,7 @@ func New() *Pool {
 func (p *Pool) Alloc(n int) []byte {
 	p.ready()
 	if n < 0 {
-		panic("mempool: negative allocation size")
+		panic("yukino_mempool: negative allocation size")
 	}
 	if n == 0 {
 		return []byte{}
@@ -239,7 +239,7 @@ func (p *Pool) shard() *threadCache {
 
 func (p *Pool) ready() {
 	if p == nil || p.classes == nil {
-		panic("mempool: nil pool")
+		panic("yukino_mempool: nil pool")
 	}
 }
 
@@ -249,7 +249,7 @@ func (p *Pool) ready() {
 func (p *Pool) fault(err error, ptr unsafe.Pointer) {
 	addr := uintptr(ptr)
 	slog.Error("rejected free", "addr", fmt.Sprintf("%#x", addr), "err", err)
-	panic(fmt.Errorf("mempool: %w at %#x", err, addr))
+	panic(fmt.Errorf("yukino_mempool: %w at %#x", err, addr))
 }
 
 func sliceData(b []byte) unsafe.Pointer {

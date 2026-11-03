@@ -1,4 +1,4 @@
-package mempool
+package yukino_mempool
 
 import "sync"
 
@@ -38,7 +38,7 @@ func (t *threadCache) pop(p *Pool, class int) []byte {
 		}
 		t.free[class] = p.classes[class].take(buf[:0], want)
 		if len(t.free[class]) == 0 {
-			panic("mempool: central cache returned an empty batch")
+			panic("yukino_mempool: central cache returned an empty batch")
 		}
 	}
 	last := len(t.free[class]) - 1

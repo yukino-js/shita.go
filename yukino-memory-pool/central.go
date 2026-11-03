@@ -1,4 +1,4 @@
-package mempool
+package yukino_mempool
 
 import (
 	"fmt"
@@ -24,7 +24,7 @@ func (c *centralCache) take(dst [][]byte, want int) [][]byte {
 		return dst
 	}
 	if len(dst) != 0 {
-		panic("mempool: central cache refill requires an empty destination")
+		panic("yukino_mempool: central cache refill requires an empty destination")
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -37,7 +37,7 @@ func (c *centralCache) take(dst [][]byte, want int) [][]byte {
 	for len(dst) < want {
 		steps++
 		if steps > limit {
-			panic("mempool: central cache could not fill the requested batch")
+			panic("yukino_mempool: central cache could not fill the requested batch")
 		}
 		s := c.partial
 		if s == nil {
@@ -88,7 +88,7 @@ func (c *centralCache) giveBack(blocks [][]byte) {
 			if cap(block) > 0 {
 				addr = uintptr(sliceData(block))
 			}
-			panic(fmt.Sprintf("mempool: returned block %#x is not owned by size class %d", addr, c.class))
+			panic(fmt.Sprintf("yukino_mempool: returned block %#x is not owned by size class %d", addr, c.class))
 		}
 		if err := s.push(block); err != nil {
 			c.pool.fault(err, sliceData(block))

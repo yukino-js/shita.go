@@ -1,4 +1,4 @@
-package mempool
+package yukino_mempool
 
 import (
 	"sync/atomic"
@@ -48,10 +48,10 @@ type region struct {
 // pages (mem, base, npages) and must not be published.
 func (s *span) prepare(class, blockSize int) {
 	if len(s.mem) < blockSize {
-		panic("mempool: span is smaller than one block")
+		panic("yukino_mempool: span is smaller than one block")
 	}
 	if uintptr(unsafe.Pointer(unsafe.SliceData(s.mem))) != s.base {
-		panic("mempool: span base does not match its memory")
+		panic("yukino_mempool: span base does not match its memory")
 	}
 	s.class = class
 	s.blockSize = blockSize
@@ -174,14 +174,14 @@ func (s *span) whole() bool {
 // owns. Coalescing changes npages without moving the underlying allocation.
 func (s *span) resetMem() {
 	if s.region == nil || cap(s.region.raw) == 0 {
-		panic("mempool: span has no backing region")
+		panic("yukino_mempool: span has no backing region")
 	}
 	raw := s.region.raw
 	rawBase := uintptr(unsafe.Pointer(unsafe.SliceData(raw)))
 	start := int(s.base - rawBase)
 	size := s.npages * pageSize
 	if start < 0 || start+size > len(raw) {
-		panic("mempool: coalesced span escapes its region")
+		panic("yukino_mempool: coalesced span escapes its region")
 	}
 	s.mem = raw[start : start+size : start+size]
 	s.raw = raw
