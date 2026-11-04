@@ -1,5 +1,4 @@
-// Package clerk implements the yukino-kv client. It is the Go port of the
-// raftClerk module of KVstorageBaseRaft-cpp: a clerk remembers the last
+// Package clerk implements the yukino-kv client: a clerk remembers the last
 // server that acted as leader, retries failed requests on the next server
 // in ring order, and keeps one request id per logical operation so the KV
 // layer can deduplicate retries and preserve linearizability.

@@ -59,12 +59,4 @@
 // cannot parse, or a duplicate key, and it discards the partial list. The C++
 // loader reused the previous key when a line had no separator, dropped empty
 // values, and parsed every key with stoi.
-//
-// # Relationship to the C++ original
-//
-// This package is a Go port of the Skiplist-CPP project by Carl, which is
-// distributed under the GNU General Public License version 3. The licence of
-// this derivative work is unchanged; see the LICENSE file and the "Defects
-// corrected from Skiplist-CPP" section of the README for the list of defects
-// that were fixed during the port.
 package skiplist

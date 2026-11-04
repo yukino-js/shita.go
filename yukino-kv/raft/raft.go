@@ -1,8 +1,7 @@
 // Package raft implements the Raft consensus algorithm: leader election,
 // log replication and log compaction through snapshots.
 //
-// This is a Go port of the raftCore module of the KVstorageBaseRaft-cpp
-// project. The control flow deliberately mirrors the original so the two
+// The control flow deliberately mirrors the original so the two
 // implementations can be read side by side, with a few deliberate
 // corrections where the C++ code was buggy (each is marked with a FIX
 // comment). C++ threads and the bundled fiber library become goroutines,

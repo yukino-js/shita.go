@@ -70,47 +70,6 @@ for concurrent use. A source installed with `WithRandSource` is read only while
 the exclusive lock is held; do not share a source that is not itself
 goroutine-safe between two lists.
 
-## Defects corrected from Skiplist-CPP
-
-The C++ implementation is a single header, `skiplist.h`. The following are
-defects in that code, not intentional behaviour that this port preserved.
-
-- The mutex was a process-wide global, so unrelated lists blocked each other.
-  `search_element`, `display_list`, `dump_file`, `load_file`, and `size` did
-  not take it at all, so they raced with writers.
-- `get_random_level` started at 1 and insertion then linked every index from 0
-  through that draw, so lane 0 and lane 1 always contained the same nodes. The
-  coin toss also ran without an upper bound and was clamped only afterwards.
-  Heights here start at 1, meaning the bottom lane only, and the draw stops at
-  the configured cap. `WithMaxLevel` counts lanes. The C++ constructor took the
-  highest index and therefore allocated one extra lane for the same number.
-- `get_key_value_from_string` returned without clearing the output pointers
-  when a line had no separator. The loader then inserted the previous key and
-  value again.
-- `load_file` parsed every key with `stoi`, so the key type parameter was not
-  real, a non-integer aborted the process, and an empty value was skipped.
-  Empty values round-trip. Duplicate keys in one input are reported instead of
-  being silently dropped.
-- The text format could not represent a separator, a backslash, or a line
-  break. Fields are escaped.
-- `dump_file` and `load_file` ignored I/O errors, always used the relative path
-  `store/dumpFile`, and shared one `fstream` pair between calls. A crash
-  mid-write could leave a truncated file. `DumpFile` creates parent
-  directories, syncs a temporary file, and renames it into place.
-- Every operation wrote to standard output while holding the global mutex. The
-  library returns values and errors. The demo logs through `log/slog`.
-- `clear` freed the bottom lane by recursion, which overflows the stack on a
-  long list. `Clear` detaches the header in constant time.
-- The class was copyable and a copy double-freed the nodes. `SkipList` must be
-  passed by pointer; `go vet` reports a copy because of the embedded mutex.
-- A negative level cap was accepted and would mis-size the header array.
-  Options are validated, including a NaN probability.
-- `rand` was unseeded in the sample driver and is not safe for concurrent
-  callers.
-
-`Insert` still refuses to replace a value, because that was the documented
-contract of `insert_element`. `Set` is the operation the C++ type was missing.
-
 ## Layout
 
 | Path                                  | Role                                                       |
@@ -134,7 +93,5 @@ This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
 Foundation, either version 3 of the License, or (at your option) any later
 version. See `LICENSE`.
-
-This program is a derivative work of Skiplist-CPP.
 
 Copyright (C) 2026 the yukino-skiplist authors

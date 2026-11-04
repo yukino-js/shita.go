@@ -1,6 +1,5 @@
-// Command memory-pool times the pool against make, using the same shapes as
-// the C++ v3 performance test: a small-object loop, a concurrent mix, and a
-// mixed-size loop.
+// Command memory-pool times the pool against make:
+// a small-object loop, a concurrent mix, and a mixed-size loop.
 //
 // make does not free inside the loop. Its bytes stay reachable until the
 // slice is dropped, and the collector reclaims them later. The pool's Free

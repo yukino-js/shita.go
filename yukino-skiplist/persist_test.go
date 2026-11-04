@@ -105,8 +105,7 @@ func TestDumpFollowsListOrder(t *testing.T) {
 }
 
 func TestLegacyDumpOrdersKeys(t *testing.T) {
-	// Byte-for-byte sample of Skiplist-CPP/store/dumpFile. The values include
-	// the semicolons that were stored, and the keys are not sorted.
+	// The values include the semicolons that were stored, and the keys are not sorted.
 	const legacy = "1:a;\n19:tian;\n3:b;\n7:c;\n8:hang;\n9:cheng;\n"
 	format := NewFormat(IntCodec(), StringCodec())
 	loaded, err := Load[int, string](strings.NewReader(legacy), format)

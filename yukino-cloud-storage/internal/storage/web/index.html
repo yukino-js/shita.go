@@ -1,235 +1,250 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Yukino Cloud Storage</title>
     <style>
-        :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --background: #f5f6fa;
-            --card-bg: #ffffff;
-        }
+      :root {
+        --primary-color: #2c3e50;
+        --secondary-color: #3498db;
+        --background: #f5f6fa;
+        --card-bg: #ffffff;
+      }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
 
-        body {
-            background-color: var(--background);
-            padding: 2rem;
-        }
+      body {
+        background-color: var(--background);
+        padding: 2rem;
+      }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
 
-        h1 {
-            text-align: center;
-            color: var(--primary-color);
-            margin-bottom: 2rem;
-            font-size: 2.5rem;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-        }
+      h1 {
+        text-align: center;
+        color: var(--primary-color);
+        margin-bottom: 2rem;
+        font-size: 2.5rem;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+      }
 
-        .upload-section,
-        .file-list {
-            background: var(--card-bg);
-            border-radius: 10px;
-            padding: 2rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
+      .upload-section,
+      .file-list {
+        background: var(--card-bg);
+        border-radius: 10px;
+        padding: 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
 
-        .upload-section {
-            margin-bottom: 2rem;
-        }
+      .upload-section {
+        margin-bottom: 2rem;
+      }
 
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
 
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: var(--primary-color);
-            font-weight: 500;
-        }
+      label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: var(--primary-color);
+        font-weight: 500;
+      }
 
-        input[type="file"] {
-            border: 2px dashed #ddd;
-            padding: 1rem;
-            width: 100%;
-            border-radius: 5px;
-            cursor: pointer;
-        }
+      input[type="file"] {
+        border: 2px dashed #ddd;
+        padding: 1rem;
+        width: 100%;
+        border-radius: 5px;
+        cursor: pointer;
+      }
 
-        .storage-type {
-            display: flex;
-            gap: 1rem;
-            margin: 1rem 0;
-        }
+      .storage-type {
+        display: flex;
+        gap: 1rem;
+        margin: 1rem 0;
+      }
 
-        .storage-type label {
-            background: #f0f0f0;
-            padding: 0.8rem 1.5rem;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
+      .storage-type label {
+        background: #f0f0f0;
+        padding: 0.8rem 1.5rem;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
 
-        .storage-type input:checked + label {
-            background: var(--secondary-color);
-            color: white;
-        }
+      .storage-type input:checked + label {
+        background: var(--secondary-color);
+        color: white;
+      }
 
-        button {
-            background: var(--secondary-color);
-            color: white;
-            border: none;
-            padding: 0.8rem 1.5rem;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+      button {
+        background: var(--secondary-color);
+        color: white;
+        border: none;
+        padding: 0.8rem 1.5rem;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
 
-        button:hover {
-            opacity: 0.9;
-            transform: translateY(-2px);
-        }
+      button:hover {
+        opacity: 0.9;
+        transform: translateY(-2px);
+      }
 
-        .status {
-            margin-top: 1rem;
-            color: var(--primary-color);
-            min-height: 1.2em;
-        }
+      .status {
+        margin-top: 1rem;
+        color: var(--primary-color);
+        min-height: 1.2em;
+      }
 
-        .file-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1rem;
-            border-bottom: 1px solid #eee;
-        }
+      .file-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem;
+        border-bottom: 1px solid #eee;
+      }
 
-        .file-info {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
+      .file-info {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+      }
 
-        .file-type {
-            background: #eee;
-            padding: 0.3rem 0.8rem;
-            border-radius: 5px;
-            font-size: 0.9rem;
-        }
+      .file-type {
+        background: #eee;
+        padding: 0.3rem 0.8rem;
+        border-radius: 5px;
+        font-size: 0.9rem;
+      }
 
-        .download {
-            background: var(--secondary-color);
-            color: #fff;
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-        }
+      .download {
+        background: var(--secondary-color);
+        color: #fff;
+        text-decoration: none;
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+      }
 
-        .empty {
-            color: #888;
-            padding: 1rem 0;
-        }
+      .empty {
+        color: #888;
+        padding: 1rem 0;
+      }
     </style>
-</head>
+  </head>
 
-<body>
+  <body>
     <div class="container">
-        <h1>&#128193; Yukino Cloud Storage</h1>
+      <h1>&#128193; Yukino Cloud Storage</h1>
 
-        <div class="upload-section">
-            <div class="form-group">
-                <label for="fileInput">Select file</label>
-                <input type="file" id="fileInput">
-            </div>
-
-            <div class="form-group">
-                <label>Storage tier</label>
-                <div class="storage-type">
-                    <div>
-                        <input type="radio" name="storageType" id="deepStorage" value="deep" checked>
-                        <label for="deepStorage">Deep (compressed)</label>
-                    </div>
-                    <div>
-                        <input type="radio" name="storageType" id="lowStorage" value="low">
-                        <label for="lowStorage">Low (verbatim)</label>
-                    </div>
-                </div>
-            </div>
-
-            <button type="button" onclick="uploadFile()">&#11014;&#65039; Upload</button>
-            <p id="status" class="status"></p>
+      <div class="upload-section">
+        <div class="form-group">
+          <label for="fileInput">Select file</label>
+          <input type="file" id="fileInput" />
         </div>
 
-        <div class="file-list">
-            <h3>Stored files</h3>
-            {{if .Files}}
-            {{range .Files}}
-            <div class="file-item">
-                <div class="file-info">
-                    <span>&#128196; {{.Name}}</span>
-                    <span class="file-type">{{if eq .Type "deep"}}Deep{{else}}Low{{end}}</span>
-                    <span>{{.Size}}</span>
-                    <span>{{.Time}}</span>
-                </div>
-                <a class="download" href="{{.URL}}" download>&#11015;&#65039; Download</a>
+        <div class="form-group">
+          <label>Storage tier</label>
+          <div class="storage-type">
+            <div>
+              <input
+                type="radio"
+                name="storageType"
+                id="deepStorage"
+                value="deep"
+                checked
+              />
+              <label for="deepStorage">Deep (compressed)</label>
             </div>
-            {{end}}
-            {{else}}
-            <p class="empty">No files uploaded yet.</p>
-            {{end}}
+            <div>
+              <input
+                type="radio"
+                name="storageType"
+                id="lowStorage"
+                value="low"
+              />
+              <label for="lowStorage">Low (verbatim)</label>
+            </div>
+          </div>
         </div>
+
+        <button type="button" onclick="uploadFile()">
+          &#11014;&#65039; Upload
+        </button>
+        <p id="status" class="status"></p>
+      </div>
+
+      <div class="file-list">
+        <h3>Stored files</h3>
+        {{if .Files}} {{range .Files}}
+        <div class="file-item">
+          <div class="file-info">
+            <span>&#128196; {{.Name}}</span>
+            <span class="file-type"
+              >{{if eq .Type "deep"}}Deep{{else}}Low{{end}}</span
+            >
+            <span>{{.Size}}</span>
+            <span>{{.Time}}</span>
+          </div>
+          <a class="download" href="{{.URL}}" download
+            >&#11015;&#65039; Download</a
+          >
+        </div>
+        {{end}} {{else}}
+        <p class="empty">No files uploaded yet.</p>
+        {{end}}
+      </div>
     </div>
 
     <script>
-        async function uploadFile() {
-            const input = document.getElementById('fileInput');
-            const status = document.getElementById('status');
-            const storageType = document.querySelector('input[name="storageType"]:checked').value;
-            const file = input.files[0];
-            if (!file) {
-                alert('Please choose a file first.');
-                return;
-            }
-            // The server expects a base64 encoded file name in the FileName header.
-            const encodedName = btoa(unescape(encodeURIComponent(file.name)));
-            status.textContent = 'Uploading...';
-            try {
-                const resp = await fetch('/upload', {
-                    method: 'POST',
-                    headers: {
-                        'StorageType': storageType,
-                        'FileName': encodedName,
-                        'Content-Type': 'application/octet-stream'
-                    },
-                    body: file
-                });
-                if (resp.ok) {
-                    location.reload();
-                } else {
-                    status.textContent = 'Upload failed: HTTP ' + resp.status;
-                }
-            } catch (err) {
-                status.textContent = 'Network error: ' + err;
-            }
+      async function uploadFile() {
+        const input = document.getElementById("fileInput");
+        const status = document.getElementById("status");
+        const storageType = document.querySelector(
+          'input[name="storageType"]:checked',
+        ).value;
+        const file = input.files[0];
+        if (!file) {
+          alert("Please choose a file first.");
+          return;
         }
+        // The server expects a base64 encoded file name in the FileName header.
+        const encodedName = btoa(unescape(encodeURIComponent(file.name)));
+        status.textContent = "Uploading...";
+        try {
+          const resp = await fetch("/upload", {
+            method: "POST",
+            headers: {
+              StorageType: storageType,
+              FileName: encodedName,
+              "Content-Type": "application/octet-stream",
+            },
+            body: file,
+          });
+          if (resp.ok) {
+            location.reload();
+          } else {
+            status.textContent = "Upload failed: HTTP " + resp.status;
+          }
+        } catch (err) {
+          status.textContent = "Network error: " + err;
+        }
+      }
     </script>
-</body>
-
+  </body>
 </html>

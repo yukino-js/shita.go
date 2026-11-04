@@ -1,7 +1,4 @@
-// Command skiplist-demo exercises the yukino-skiplist API end to end. It is
-// the Go counterpart of the main.cpp driver shipped with the original
-// Skiplist-CPP project, extended to cover persistence, ordered iteration and
-// concurrent access.
+// Command skiplist-demo exercises the yukino-skiplist API end to end.
 //
 // Diagnostic messages are written to standard error through log/slog, while
 // the rendered data structure is written to standard output, so the two

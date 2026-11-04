@@ -1,6 +1,5 @@
 // Package kvserver implements the linearizable key-value state machine
-// layered on top of the raft package. It is the Go port of the kvServer
-// module of KVstorageBaseRaft-cpp: every client request is submitted to
+// layered on top of the raft package: every client request is submitted to
 // Raft as a log entry, executed exactly once through the deduplication
 // table when it commits, and answered by matching the committed entry
 // against the waiting RPC handler.

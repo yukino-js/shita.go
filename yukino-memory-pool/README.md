@@ -1,8 +1,6 @@
 # yukino-memory-pool
 
-A concurrent size-class allocator for small byte slices, ported from the v3
-C++ memory pool in `memory-pool/v3`. Requests up to 256 KiB are rounded up to
-a size class and satisfied from three caches. Larger requests are ordinary
+A concurrent size-class allocator for small byte slices. Requests up to 256 KiB are rounded up to a size class and satisfied from three caches. Larger requests are ordinary
 `make` slices retained by the pool until `Free`.
 
 ```go
@@ -115,93 +113,6 @@ collector is logged at debug level. Enable that with:
 ```go
 slog.SetLogLoggerLevel(slog.LevelDebug)
 ```
-
-## Migration notes
-
-The v3 C++ pool is a three-level size-class allocator (thread cache, central
-cache, page cache) with an 8-byte minimum and a 256 KiB cutoff. That
-structure is unchanged. The following defects in that tree are fixed here
-rather than reproduced.
-
-1. **Free-list length underflow.** `ThreadCache::allocate` decremented
-   `freeListSize_` before testing the list. On an empty list the `size_t`
-   counter wrapped to its maximum, so the cache believed it held a huge
-   number of blocks. The return path then tried to keep a quarter of that
-   fictional length, walked off the real list, and returned nothing. Thread
-   caches never recycled memory to the central cache. The Go cache uses the
-   slice length as the counter, and both move together.
-
-2. **Batch count disagreed with the blocks actually returned.** `getBatchNum`
-   used `sizeof(1)` as its lower bound. That expression is 4, not 1, so
-   classes that should move one block at a time asked for four. On the
-   page-cache path `fetchRange` also left the caller's `batchNum` unchanged
-   when the span was shorter than the request, and the thread cache then
-   linked a single block as if the rest of the batch existed. `batchFor`
-   floors at 1, and the central cache returns exactly the requested batch,
-   growing another span when the current one runs out.
-
-3. **The return path passed a byte count where a block count was required.**
-   `returnToCentralCache` called `returnRange(start, returnNum * alignedSize, index)`
-   while `returnRange` treated the second argument as a maximum number of
-   nodes. It only stopped because the list happened to be null-terminated.
-   The Go central cache receives the blocks themselves.
-
-4. **`deallocate(nullptr, small)` wrote through the null pointer.** `free`
-   defines `free(nullptr)` as a no-op. `Free(nil)` and `Free` of a
-   zero-capacity slice are no-ops.
-
-5. **Thread-local blocks leaked when the thread exited.** There was no
-   destructor. `Flush` returns every shard, and dropping the pool drops the
-   shards with it because they are part of the pool value. Cached blocks are
-   not stored in a place the garbage collector can discard on its own.
-
-6. **Page-cache deallocation was dead, and unsafe if called.** Nothing called
-   `deallocateSpan`. The routine merged only with the following span, used
-   `map::operator[]` (which inserts an empty entry), could leave a null list
-   head in the map, and did not register a split remainder in `spanMap_`.
-   The next allocation of that size would then dereference the null head.
-   Idle spans are indexed by base and by end. A null head is never inserted.
-   Remainders are tracked, and coalescing walks both neighbours, repeatedly,
-   but only inside one `make`. Two separate allocations are never merged,
-   even if the runtime happens to place them next to each other.
-
-7. **Mapped pages were never returned.** `mmap` had no `munmap` path, so the
-   high-water mark was the resident set for the life of the process. A fully
-   free span is coalesced and, once the idle-region caps above are exceeded,
-   dropped for the collector.
-
-8. **Fresh anonymous memory was zeroed twice, and recycled blocks were not
-   zeroed at all.** `MAP_ANONYMOUS` pages are already zero-filled, so the
-   `memset` was pure cost, while a later caller could read the previous
-   caller's bytes. `make` provides the fresh zeroes. `Alloc` clears a block
-   again when it is handed out, including one that has been recycled.
-
-9. **32,768 size classes.** `FREE_LIST_SIZE` was `MAX_BYTES / ALIGNMENT`, and
-   the comment justifying that by the width of `void*` is wrong: the
-   alignment and the pointer width are independent. Every thread carried two
-   arrays of 32,768 entries (about 512 KiB of metadata) and the central cache
-   carried the same number of atomic lists and spinlocks. The geometric
-   table above is 204 classes.
-
-10. **`std::atomic_flag` was cleared without being initialised.** In C++17
-    the default constructor of `atomic_flag` does not clear it;
-    `ATOMIC_FLAG_INIT` was required. The build asked for C++17. Per-class
-    `sync.Mutex` values need no such ceremony.
-
-11. **A fully free span could not be reused for another size class.** Blocks
-    stayed on the central free list forever, so pages carved into 32-byte
-    blocks could never satisfy a 64-byte request. A span whose every block
-    has come back is unpublished and returned to the page cache, which may
-    hand it to a different class or coalesce it with its neighbours.
-
-12. **`BlockHeader` was unused.** Ownership is the span plus a per-block bit,
-    not a header the allocator never wrote. `Free` therefore does not take a
-    size: the address identifies the block. Passing the wrong size to the
-    C++ `deallocate` put the block on the wrong free list.
-
-`std::atomic_flag` spinlocks were also replaced with `sync.Mutex`. The
-central free lists were already mutated only while the per-class lock was
-held, so the extra atomics did not make those lists safe on their own.
 
 ## Tests
 

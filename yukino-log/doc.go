@@ -42,13 +42,4 @@
 // it for [Async.Stop], [Async.Flush], and [LogFile.Close]. A failing output
 // never panics and never feeds back into the logger, so a broken sink cannot
 // recurse.
-//
-// # Relationship to the C++ original
-//
-// This package is a Go port of the kamaLog teaching project, which is itself
-// a simplification of the muduo asynchronous logging design. kamaLog is
-// distributed under the GNU General Public License version 3; the licence of
-// this derivative work is unchanged. See the LICENSE file and the "Defects
-// corrected from kamaLog" section of the README for the defects that were
-// fixed during the port.
 package yukino_log
