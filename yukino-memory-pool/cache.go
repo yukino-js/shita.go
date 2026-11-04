@@ -2,6 +2,11 @@ package yukino_mempool
 
 import "sync"
 
+// cacheLine is the padding placed after each shard. darwin/arm64 has
+// 128-byte lines and the common amd64 and linux/arm64 targets have 64-byte
+// lines, so 128 covers both: no cache line holds fields of two shards.
+const cacheLine = 128
+
 // threadCache is one shard of the fast path. The pool keeps a fixed set of
 // shards, about one per processor, instead of a sync.Pool.
 //
@@ -15,9 +20,24 @@ import "sync"
 //
 // A shard is always addressable and is only ever touched under mu. Lock
 // order is mu, then the central mutex, then the page mutex.
+//
+// The allocation counters live here rather than on the Pool. Alloc and Free
+// write them every call, so one shared set of counters would put the whole
+// pool on a single contended cache line. They are plain integers guarded by
+// mu: the hot path already holds mu, so no atomics are needed, and Stats
+// locks each shard in turn to sum them.
 type threadCache struct {
 	mu   sync.Mutex
 	free [][][]byte
+
+	smallAllocs uint64
+	largeAllocs uint64
+	frees       uint64
+	outstanding int64
+	held        int64
+
+	// Trailing pad; see cacheLine.
+	_ [cacheLine]byte
 }
 
 func (t *threadCache) init() {

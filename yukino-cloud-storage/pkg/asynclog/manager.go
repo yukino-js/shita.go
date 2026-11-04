@@ -83,20 +83,23 @@ func Default() *Logger { return defaultManager.Default() }
 // Register adds a logger to the default manager.
 func Register(l *Logger) error { return defaultManager.Add(l) }
 
-// The package-level helpers below log through the default logger. They report
-// the caller's file and line by accounting for the extra wrapper frame.
+// The package-level helpers below log through the default logger. Each helper
+// replaces the equivalent method frame rather than adding to it, so the stack
+// depth between the helper and Logger.log is the same as between Debugf and
+// Logger.log; extraSkip therefore stays zero and the user's call site is
+// reported correctly.
 
 // Debugf logs a formatted record at DEBUG level through the default logger.
-func Debugf(format string, args ...any) { Default().log(LevelDebug, 1, format, args) }
+func Debugf(format string, args ...any) { Default().log(LevelDebug, 0, format, args) }
 
 // Infof logs a formatted record at INFO level through the default logger.
-func Infof(format string, args ...any) { Default().log(LevelInfo, 1, format, args) }
+func Infof(format string, args ...any) { Default().log(LevelInfo, 0, format, args) }
 
 // Warnf logs a formatted record at WARN level through the default logger.
-func Warnf(format string, args ...any) { Default().log(LevelWarn, 1, format, args) }
+func Warnf(format string, args ...any) { Default().log(LevelWarn, 0, format, args) }
 
 // Errorf logs a formatted record at ERROR level through the default logger.
-func Errorf(format string, args ...any) { Default().log(LevelError, 1, format, args) }
+func Errorf(format string, args ...any) { Default().log(LevelError, 0, format, args) }
 
 // Fatalf logs a formatted record at FATAL level through the default logger.
-func Fatalf(format string, args ...any) { Default().log(LevelFatal, 1, format, args) }
+func Fatalf(format string, args ...any) { Default().log(LevelFatal, 0, format, args) }

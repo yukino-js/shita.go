@@ -1,10 +1,11 @@
 # yukino-skiplist
 
-Concurrent ordered map implemented as a skip list. It keeps the original operations — insert, update, delete,
-lookup, ordered display, dump, load, and size — and corrects the defects
+Concurrent ordered map implemented as a skip list. It keeps the original
+operations — insert, delete, lookup, ordered display, dump, load, and size —
+adds the in-place update the C++ type was missing, and corrects the defects
 listed below.
 
-The package requires Go 1.23 or later. It uses only the standard library.
+The package requires Go 1.26 or later. It uses only the standard library.
 
 ## Install
 

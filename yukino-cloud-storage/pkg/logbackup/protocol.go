@@ -18,7 +18,8 @@ const AppendMethod = "Append"
 // AppendRequest carries a batch of formatted log records.
 type AppendRequest struct {
 	// Source identifies the originating process, for example a host or service
-	// name. It is recorded alongside each batch.
+	// name. The receiver prefixes every stored record with it so batches from
+	// multiple senders remain attributable.
 	Source string `json:"source"`
 	// Records holds one or more already-formatted log lines.
 	Records []string `json:"records"`

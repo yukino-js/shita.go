@@ -449,6 +449,47 @@ func TestFlushIsIdempotent(t *testing.T) {
 	}
 }
 
+func TestDefaultPoolPackageAPI(t *testing.T) {
+	// The package-level Alloc and Free stand in for the C++ static
+	// MemoryPool::allocate and deallocate and share one process-wide pool.
+	// Deltas are used because the default pool outlives this test.
+	if Default() != Default() {
+		t.Fatal("Default returned two different pools")
+	}
+	before := Default().Stats()
+
+	buf := Alloc(48)
+	if len(buf) != 48 {
+		t.Fatalf("Alloc(48) len = %d", len(buf))
+	}
+	if size, _ := BlockSize(48); cap(buf) != size {
+		t.Fatalf("Alloc(48) cap = %d, want class %d", cap(buf), size)
+	}
+	for i := range buf {
+		buf[i] = byte(i)
+	}
+	mid := Default().Stats()
+	if mid.SmallAllocs != before.SmallAllocs+1 || mid.Outstanding != before.Outstanding+1 {
+		t.Fatalf("default pool did not record the allocation: %+v", mid)
+	}
+
+	Free(buf)
+	after := Default().Stats()
+	if after.Frees != before.Frees+1 || after.Outstanding != before.Outstanding {
+		t.Fatalf("default pool did not record the free: %+v", after)
+	}
+
+	// A large request goes through the same package-level entry points.
+	big := Alloc(MaxSmall + 128)
+	if len(big) != MaxSmall+128 {
+		t.Fatalf("large Alloc len = %d", len(big))
+	}
+	Free(big)
+	if got := Default().Stats(); got.Outstanding != before.Outstanding {
+		t.Fatalf("large round trip left %d outstanding", got.Outstanding-before.Outstanding)
+	}
+}
+
 func fill(buf []byte, value byte) {
 	limit := len(buf)
 	if limit > 64 {

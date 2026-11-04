@@ -401,13 +401,15 @@ func sameDay(t, period time.Time, loc *time.Location) bool {
 
 func checkBasename(basename string) error {
 	base := filepath.Base(basename)
-	if basename == "" || base == "." || base == ".." || stringsHasSeparatorSuffix(basename) {
+	if basename == "" || base == "." || base == ".." || endsWithSeparator(basename) {
 		return ErrBasename
 	}
 	return nil
 }
 
-func stringsHasSeparatorSuffix(path string) bool {
+// endsWithSeparator reports whether path ends with a path separator, which
+// means it names a directory rather than a file prefix.
+func endsWithSeparator(path string) bool {
 	if path == "" {
 		return false
 	}

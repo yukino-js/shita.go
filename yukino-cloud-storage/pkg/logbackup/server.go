@@ -32,11 +32,19 @@ type Server struct {
 
 // NewServer builds a receiver. The underlying file is opened lazily on the
 // first batch.
+//
+// The RPC server is constructed and registered eagerly so that Stop is safe to
+// call at any time. Constructing it inside Serve instead would race with Stop:
+// a shutdown signal arriving before the Serve goroutine runs would skip
+// GracefulStop entirely and leave the accept loop blocked forever.
 func NewServer(opts ServerOptions) *Server {
 	if opts.MaxBatch <= 0 {
 		opts.MaxBatch = 1024
 	}
-	return &Server{opts: opts}
+	s := &Server{opts: opts}
+	s.rpc = rpc.NewServer()
+	s.rpc.Register(ServiceName, s)
+	return s
 }
 
 // Append implements the reflected RPC handler. It returns a non-nil reply
@@ -56,6 +64,14 @@ func (s *Server) Append(ctx context.Context, req *AppendRequest) (*AppendReply, 
 	}
 	stored := 0
 	for _, rec := range records {
+		// Prefix each stored record with its origin so interleaved batches
+		// from multiple senders remain attributable line by line. The C++
+		// receiver did the same with the client's address.
+		if req.Source != "" {
+			if _, err := s.bw.WriteString("[" + req.Source + "] "); err != nil {
+				return &AppendReply{Stored: stored}, err
+			}
+		}
 		if _, err := s.bw.WriteString(rec); err != nil {
 			return &AppendReply{Stored: stored}, err
 		}
@@ -91,10 +107,9 @@ func (s *Server) ensureOpen() error {
 	return nil
 }
 
-// Serve registers the RPC service and blocks serving on lis.
+// Serve blocks serving the registered RPC service on lis. It returns nil once
+// Stop has been called, including when Stop ran before Serve started.
 func (s *Server) Serve(lis net.Listener) error {
-	s.rpc = rpc.NewServer()
-	s.rpc.Register(ServiceName, s)
 	return s.rpc.Serve(lis)
 }
 

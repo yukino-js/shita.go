@@ -23,14 +23,20 @@ type Message struct {
 //
 // The timestamp carries a date component and millisecond precision so records
 // produced on different days, or within the same second, remain unambiguous;
-// the original C++ layout printed only HH:MM:SS.
+// the original C++ layout printed only HH:MM:SS. The goroutine segment is
+// omitted when GoroutineID is negative, which is how a logger built with the
+// goroutine-id toggle disabled marks its records.
 func (m *Message) Format() string {
 	buf := make([]byte, 0, 96+len(m.Payload))
 	buf = append(buf, '[')
 	buf = m.Time.AppendFormat(buf, "2006-01-02 15:04:05.000")
-	buf = append(buf, ']', '[', 'g', ':')
-	buf = strconv.AppendInt(buf, m.GoroutineID, 10)
-	buf = append(buf, ']', '[')
+	buf = append(buf, ']')
+	if m.GoroutineID >= 0 {
+		buf = append(buf, '[', 'g', ':')
+		buf = strconv.AppendInt(buf, m.GoroutineID, 10)
+		buf = append(buf, ']')
+	}
+	buf = append(buf, '[')
 	buf = append(buf, m.Level.String()...)
 	buf = append(buf, ']', '[')
 	buf = append(buf, m.LoggerName...)

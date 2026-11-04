@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -228,5 +229,76 @@ func TestParseLevel(t *testing.T) {
 	}
 	if _, err := ParseLevel("bogus"); err == nil {
 		t.Fatal("expected error for unknown level")
+	}
+}
+
+// helperLogf mirrors the frame shape of the package-level helpers such as
+// Infof: exactly one free function sits between the user's call site and
+// Logger.log. The record must therefore point at the helperLogf call site.
+func helperLogf(l *Logger, format string, args ...any) { l.log(LevelInfo, 0, format, args) }
+
+func TestHelperShapeReportsCallerSite(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "out.log")
+	l, err := NewBuilder().
+		Name("helper").
+		Flusher(NewFileFlusher(path, FlushBuffered)).
+		Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The two statements must stay adjacent so the expected line is exact.
+	_, thisFile, callLine, _ := runtime.Caller(0)
+	helperLogf(l, "helper-record")
+	if err := l.Close(); err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := fmt.Sprintf("[%s:%d]", filepath.Base(thisFile), callLine+1)
+	if !strings.Contains(string(data), want) {
+		t.Fatalf("record does not reference the call site %s: %q", want, data)
+	}
+}
+
+func TestMessageFormatOmitsDisabledGoroutineID(t *testing.T) {
+	m := &Message{
+		Level:       LevelInfo,
+		LoggerName:  "app",
+		File:        "main.go",
+		Line:        7,
+		Payload:     "p",
+		Time:        time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC),
+		GoroutineID: -1,
+	}
+	s := m.Format()
+	if strings.Contains(s, "[g:") {
+		t.Fatalf("disabled goroutine id must not be rendered: %q", s)
+	}
+	if !strings.Contains(s, "[INFO]") || !strings.Contains(s, "[app]") {
+		t.Fatalf("format lost other segments: %q", s)
+	}
+}
+
+func TestLoggerIncludeGoroutineIDToggle(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "out.log")
+	l, err := NewBuilder().
+		Name("gid").
+		IncludeGoroutineID(false).
+		Flusher(NewFileFlusher(path, FlushBuffered)).
+		Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	l.Infof("no-gid-record")
+	if err := l.Close(); err != nil {
+		t.Fatal(err)
+	}
+	data, _ := os.ReadFile(path)
+	if strings.Contains(string(data), "[g:") {
+		t.Fatalf("goroutine id rendered although disabled: %q", data)
 	}
 }

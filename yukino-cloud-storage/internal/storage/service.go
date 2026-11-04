@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -53,6 +54,9 @@ func (s *Service) Handler() *yukino.Application {
 	app.Post("/upload", s.handleUpload)
 	prefix := strings.TrimSuffix(s.cfg.DownloadPrefix, "/")
 	app.Get(prefix+"/*name", s.handleDownload)
+	// GET does not implicitly cover HEAD, so register it explicitly;
+	// http.ServeContent answers HEAD requests without a body.
+	app.Head(prefix+"/*name", s.handleDownload)
 	return app
 }
 
@@ -61,8 +65,14 @@ func (s *Service) Handler() *yukino.Application {
 // to stop, this integrates with the process signal handling.
 func (s *Service) Run(ctx context.Context) error {
 	addr := s.cfg.Addr()
+	// Bind synchronously so a failure (for example a port already in use) is
+	// reported before anything claims the service is listening, and so the
+	// logged address is the real one even when port 0 was configured.
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		return fmt.Errorf("storage: listen on %s: %w", addr, err)
+	}
 	srv := &http.Server{
-		Addr:              addr,
 		Handler:           s.Handler(),
 		ReadHeaderTimeout: 15 * time.Second,
 		IdleTimeout:       60 * time.Second,
@@ -72,8 +82,8 @@ func (s *Service) Run(ctx context.Context) error {
 	}
 	errCh := make(chan error, 1)
 	go func() {
-		s.log.Infof("storage service listening on %s", addr)
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		s.log.Infof("storage service listening on %s", ln.Addr())
+		if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errCh <- err
 			return
 		}
@@ -396,4 +406,27 @@ func (w *statusRecorder) Write(b []byte) (int, error) {
 		w.wrote = true
 	}
 	return w.ResponseWriter.Write(b)
+}
+
+// ReadFrom delegates to the underlying writer when it supports io.ReaderFrom,
+// so large downloads can use the kernel's zero-copy path instead of buffering
+// every byte through this wrapper.
+func (w *statusRecorder) ReadFrom(r io.Reader) (int64, error) {
+	if !w.wrote {
+		*w.status = http.StatusOK
+		w.wrote = true
+	}
+	if rf, ok := w.ResponseWriter.(io.ReaderFrom); ok {
+		return rf.ReadFrom(r)
+	}
+	// The anonymous struct hides both wrappers from io.Copy so it cannot
+	// recurse back into ReadFrom.
+	return io.Copy(struct{ io.Writer }{w.ResponseWriter}, r)
+}
+
+// Flush exposes the underlying writer's http.Flusher support, if any.
+func (w *statusRecorder) Flush() {
+	if f, ok := w.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
 }

@@ -556,7 +556,7 @@ func TestNilAndZeroPanic(t *testing.T) {
 		func() { zero.Get(1) },
 		func() { zero.Delete(1) },
 		func() { zero.All() },
-		func() { zero.String() },
+		func() { _ = zero.String() },
 		func() { zero.MaxLevel() },
 		func() { zero.Probability() },
 		func() { _ = zero.Dump(nil, NewFormat(IntCodec(), IntCodec())) },

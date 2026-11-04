@@ -58,17 +58,17 @@ to protect — are fixed here; see
                     raft peers
 ```
 
-| C++ module            | Go counterpart        | Notes                                        |
-| --------------------- | --------------------- | -------------------------------------------- |
-| `src/raftCore/raft`   | `raft/`               | goroutines replace fibers and `std::thread`  |
-| `src/raftCore/kvServer` | `kvserver/`         | skip list replaced by `map[string]string`    |
-| `src/raftCore/Persister` | `raft/persister.go` | atomic writes; loads state instead of truncating |
-| `src/raftClerk`       | `clerk/`              | paced retries, `crypto/rand` client ids      |
-| `src/raftRpcPro` (protobuf) | Go structs      | JSON-encoded by yukino_rpc; gob inside log entries |
-| `src/rpc` (mprpc)     | yukino_rpc            | lazy connection pools, no startup barriers   |
-| `src/fiber`           | Go runtime            | goroutines, channels, `select`               |
-| `src/skipList`        | `map` + `sync.Mutex`  | the original README treats the engine as replaceable |
-| `src/common` (config/util) | `config/`, `log/slog` | structured logging replaces `DPrintf`   |
+| C++ module                  | Go counterpart        | Notes                                                |
+| --------------------------- | --------------------- | ---------------------------------------------------- |
+| `src/raftCore/raft`         | `raft/`               | goroutines replace fibers and `std::thread`          |
+| `src/raftCore/kvServer`     | `kvserver/`           | skip list replaced by `map[string]string`            |
+| `src/raftCore/Persister`    | `raft/persister.go`   | atomic writes; loads state instead of truncating     |
+| `src/raftClerk`             | `clerk/`              | paced retries, `crypto/rand` client ids              |
+| `src/raftRpcPro` (protobuf) | Go structs            | JSON-encoded by yukino_rpc; gob inside log entries   |
+| `src/rpc` (mprpc)           | yukino_rpc            | lazy connection pools, no startup barriers           |
+| `src/fiber`                 | Go runtime            | goroutines, channels, `select`                       |
+| `src/skipList`              | `map` + `sync.Mutex`  | the original README treats the engine as replaceable |
+| `src/common` (config/util)  | `config/`, `log/slog` | structured logging replaces `DPrintf`                |
 
 ## Repository layout
 
@@ -128,25 +128,25 @@ the same file (the same ordering defines node ids).
 
 `kvserver`:
 
-| Flag           | Default     | Meaning                                            |
-| -------------- | ----------- | -------------------------------------------------- |
-| `-f`           | `test.conf` | cluster config file                                |
-| `-id`          | `-1`        | node id (single-node mode)                         |
-| `-n`           | `0`         | bootstrap a local cluster of n child nodes         |
-| `-maxraftstate`| `500`       | snapshot threshold in bytes; `-1` disables         |
-| `-datadir`     | `.`         | directory for persisted state and snapshots        |
-| `-v`           | `false`     | debug logging                                      |
+| Flag            | Default     | Meaning                                     |
+| --------------- | ----------- | ------------------------------------------- |
+| `-f`            | `test.conf` | cluster config file                         |
+| `-id`           | `-1`        | node id (single-node mode)                  |
+| `-n`            | `0`         | bootstrap a local cluster of n child nodes  |
+| `-maxraftstate` | `500`       | snapshot threshold in bytes; `-1` disables  |
+| `-datadir`      | `.`         | directory for persisted state and snapshots |
+| `-v`            | `false`     | debug logging                               |
 
 `clerk`:
 
-| Flag      | Default     | Meaning                                  |
-| --------- | ----------- | ---------------------------------------- |
-| `-f`      | `test.conf` | cluster config file                      |
-| `-count`  | `500`       | Put/Get rounds in demo mode              |
-| `-key`    | `x`         | key used by the demo workload            |
-| `-get`    | –           | one-shot read of a key                   |
-| `-put`    | –           | one-shot `key=value` write               |
-| `-append` | –           | one-shot `key=value` append              |
+| Flag      | Default     | Meaning                       |
+| --------- | ----------- | ----------------------------- |
+| `-f`      | `test.conf` | cluster config file           |
+| `-count`  | `500`       | Put/Get rounds in demo mode   |
+| `-key`    | `x`         | key used by the demo workload |
+| `-get`    | –           | one-shot read of a key        |
+| `-put`    | –           | one-shot `key=value` write    |
+| `-append` | –           | one-shot `key=value` append   |
 
 ## Testing
 
@@ -176,7 +176,7 @@ crash-restart recovery of committed data.
    has grown too large, and signals the waiting handler.
 5. The handler answers the client. On timeout it falls back to the
    deduplication table (writes) or a guarded local read (still-leader
-   reads), and the clerk retries elsewhere with the *same* request id, so
+   reads), and the clerk retries elsewhere with the _same_ request id, so
    retries never execute twice.
 
 ### Concurrency model
@@ -199,76 +199,3 @@ share one listener per node — `Raft` (RequestVote, AppendEntries,
 InstallSnapshot) and `KVServer` (Get, PutAppend) — and the Raft service is
 exposed through a thin `raft.Service` wrapper so administrative methods
 (`Start`, `Snapshot`, `Kill`) are not reachable from the network.
-
-## Defects fixed from the C++ original
-
-Persistence and crash recovery:
-
-- **Startup truncation destroyed persisted state.** The C++ `Persister`
-  constructor truncated `raftstatePersistN.txt` and `snapshotPersistN.txt`
-  on every start, so a restarted node always came back empty — defeating
-  the purpose of persistence. Files are now loaded on startup and never
-  truncated implicitly.
-- **Whitespace-delimited reads corrupted archives.** `ReadRaftState` and
-  `ReadSnapshot` used `ifs >> str`, which stops at the first whitespace
-  token and returned a broken prefix of every boost text archive. State is
-  now gob-encoded and read whole.
-- **Non-atomic writes.** A crash mid-write could leave a half-written state
-  file. Writes now go to a temporary file, are synced, and are renamed into
-  place; `Save` writes the snapshot before the Raft state so any crash
-  window resolves toward duplicate (deduplicated) applies rather than lost
-  data.
-- **`commitIndex` was not restored after restart**, leaving a restarted
-  node briefly believing committed data was uncommitted. Both `commitIndex`
-  and `lastApplied` now resume from the snapshot point.
-
-Raft protocol handling:
-
-- **Missing `return` crashed the process.** In `AppendEntries`, when
-  `PrevLogIndex` was behind the follower's snapshot point, the C++ code
-  filled in the rejection reply but fell through into `matchLog()`, whose
-  assertion aborted the whole process on this rare but legal input. The
-  branch now returns.
-- **Term bumps were not always persisted.** `sendAppendEntries` adopted a
-  higher term from a reply without persisting, so a crash could resurrect
-  the stale term. All "three changes" (status/term/vote) now persist.
-- **Commit accounting was fragile.** Commits rode a per-heartbeat-round
-  shared ack counter whose threshold could be crossed by an empty heartbeat
-  reply, delaying commits by a full round; the correct `matchIndex` scan
-  existed but was never called. The scan (with the current-term check from
-  Raft Figure 8) is now the only commit path.
-- **Stale vote replies could promote a non-candidate.** `sendRequestVote`
-  counted grants without re-checking that the node was still the candidate
-  of that term. An explicit guard was added.
-- **`matchIndex` could move backwards** when a snapshot ack arrived after
-  newer replication progress; updates now take the maximum.
-- **`nextIndex` rewound blindly** on any rejection, including delayed
-  replies from earlier rounds (a hazard the original only noted in a
-  comment). Hints are applied only when positive and strictly decreasing.
-- **Stale-snapshot rejection was incomplete.** `InstallSnapshot` compared
-  only against the previous snapshot point; it now also rejects snapshots
-  at or behind `commitIndex`, as in the standard 6.824 formulation.
-- **Unsynchronized status reads.** The C++ tickers read `m_status` without
-  the mutex (a data race); every state access here happens under the lock.
-
-KV layer and clients:
-
-- **`Append` behaved like `Put`.** The skip-list path overwrote values;
-  concatenation existed only in commented-out code. Append concatenates
-  again, matching the operation's name and 6.824 semantics.
-- **The snapshot proportion parameter was ignored**, with the trigger
-  hard-coded to `maxRaftState/10`. The documented 9/10 proportion is
-  honored.
-- **Wait-channel cleanup could evict another request.** After a leader
-  change the same log index can belong to a new in-flight request; the
-  unconditional map erase is replaced by an identity-checked delete.
-- **Clerk ids collided across runs and processes** (four unseeded `rand()`
-  calls). Ids now come from `crypto/rand`.
-- **The clerk hot-spun** through the server ring with no delay and could
-  loop forever on unexpected error strings. Retries are paced, honor
-  context cancellation, and unknown errors surface to the caller.
-- **Startup barrier sleeps** (`sleep(6)` plus a node-count-dependent sleep)
-  were removed in favor of lazy dials and natural retries.
-- **Undefined behavior in logging** (a `DPrintf` format string with missing
-  arguments, `std::string*` passed to `%s`) is gone with `slog` structured
-  logging.

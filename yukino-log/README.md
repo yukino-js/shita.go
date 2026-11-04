@@ -5,7 +5,7 @@ file backend. It keeps that design — a formatted line, a fixed
 staging buffer, one backend goroutine, and size- and day-based file rolling —
 and corrects the defects listed below.
 
-The package uses only the standard library. It requires Go 1.26.5 or later.
+The package requires Go 1.26 or later. It uses only the standard library.
 
 Import path: `github.com/yukino-js/shita.go/yukino-log`.
 
@@ -123,23 +123,25 @@ longer than `RollSize` is written whole to an empty file and can exceed the
 limit; the C++ logger instead wrote an entire staging buffer and only then
 checked the size, so the limit was soft by up to 4,000,000 bytes. The
 successor is created when the next byte arrives, which avoids an empty file
-after the last roll. The daily check runs every `CheckEveryN` appends (default 1024) and uses local midnight, not a 86400-second boundary on the Unix clock.
+after the last roll. The daily check runs every `CheckEveryN` appends (default 1024) and uses local midnight, not an 86400-second boundary on the Unix clock.
 The append that observes the new day stays in the previous file.
 
 `Append` before `Start` returns `ErrNotStarted`. `Append` after `Stop` returns
-`ErrClosed`. `Stop` before `Start` returns `ErrNotStarted`. A second `Stop`
-returns the error from the first, which is nil when the file closed cleanly.
+`ErrClosed`. `Stop` before `Start` returns `ErrNotStarted`. Concurrent and
+repeated `Stop` calls wait for the same shutdown and return the same error,
+which is nil when the file closed cleanly.
 The first write error is what `Stop` and `Flush` report; the same diagnostic
 is written to standard error and does not go back through the logger.
 
 ## Layout
 
 ```text
-doc.go        package documentation
-logger.go     levels, formatting, package-level logger
-async.go      double-buffered backend
-logfile.go    rolling file
-cmd/yukino_log-demo small driver
+doc.go         package documentation
+logger.go      levels, formatting, package-level logger
+async.go       double-buffered backend
+logfile.go     rolling file
+errors.go      sentinel errors and the fatal panic value
+cmd/yukino-log small driver
 ```
 
 ## Tests

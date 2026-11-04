@@ -163,23 +163,22 @@ func (a *Async) Flush() error {
 }
 
 // Stop tells the backend to write every accepted byte, close the file, and
-// exit, then waits for it to do so. A second call returns the same error as
-// the first. Stop before Start returns [ErrNotStarted].
+// exit, then waits for it to do so. Concurrent and repeated calls wait for
+// the same shutdown and all return the error of the first write failure,
+// which is nil when the file closed cleanly. Stop before Start returns
+// [ErrNotStarted].
 func (a *Async) Stop() error {
 	a.mu.Lock()
 	if !a.started {
 		a.mu.Unlock()
 		return ErrNotStarted
 	}
-	if a.stop {
-		err := a.err
-		a.mu.Unlock()
-		return err
-	}
 	a.stop = true
 	a.dataWait.Signal()
 	a.mu.Unlock()
 
+	// Every caller waits on the backend goroutine, so a Stop that overlaps
+	// the first one cannot observe a.err before the shutdown has finished.
 	<-a.done
 
 	a.mu.Lock()

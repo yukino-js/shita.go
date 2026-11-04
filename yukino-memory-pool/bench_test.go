@@ -33,7 +33,7 @@ func BenchmarkPoolSmall(b *testing.B) {
 
 func BenchmarkMakeSmall(b *testing.B) {
 	// A 32-byte slice that does not escape is allocated on the stack, so this
-	// reports no heap allocation. The demo in cmd/yukino_mempool-demo retains every
+	// reports no heap allocation. The demo in cmd/memory-pool retains every
 	// slice and is the comparison against make.
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {

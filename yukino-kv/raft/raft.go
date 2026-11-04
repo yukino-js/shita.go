@@ -132,6 +132,9 @@ type Raft struct {
 
 	shutdown     chan struct{}
 	shutdownOnce sync.Once
+	// tickers tracks the three background goroutines so Kill can wait
+	// for them to exit and no ticker can persist state afterwards.
+	tickers sync.WaitGroup
 }
 
 // NewRaft creates a Raft node and starts its background goroutines.
@@ -182,9 +185,9 @@ func NewRaft(peers []*Peer, me int, persister *Persister, applyCh chan ApplyMsg,
 		"snapshotTerm", rf.lastSnapshotIncludeTerm,
 		"logs", len(rf.logs))
 
-	go rf.electionTicker()
-	go rf.heartbeatTicker()
-	go rf.applierTicker()
+	rf.tickers.Go(rf.electionTicker)
+	rf.tickers.Go(rf.heartbeatTicker)
+	rf.tickers.Go(rf.applierTicker)
 	return rf, nil
 }
 
@@ -285,10 +288,15 @@ func (rf *Raft) CondInstallSnapshot(lastIncludedTerm, lastIncludedIndex int, sna
 	return true
 }
 
-// Kill stops all background goroutines. In-flight RPC replies are ignored
-// afterwards. Kill is idempotent.
+// Kill stops all background goroutines and waits for them to exit, so no
+// ticker can persist state or touch the apply channel after Kill returns.
+// In-flight RPC replies are ignored afterwards. Kill is idempotent; the
+// wait is bounded because every blocking select also observes shutdown.
 func (rf *Raft) Kill() {
-	rf.shutdownOnce.Do(func() { close(rf.shutdown) })
+	rf.shutdownOnce.Do(func() {
+		close(rf.shutdown)
+		rf.tickers.Wait()
+	})
 }
 
 // killed reports whether Kill has been called.

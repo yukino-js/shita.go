@@ -306,3 +306,50 @@ func TestFormatSize(t *testing.T) {
 		}
 	}
 }
+
+func TestDownloadHead(t *testing.T) {
+	svc, _ := newTestService(t)
+	srv := httptest.NewServer(svc.Handler())
+	defer srv.Close()
+
+	content := []byte("head request payload")
+	resp := upload(t, srv, "head.txt", content, "low")
+	resp.Body.Close()
+
+	hresp, err := http.Head(srv.URL + "/download/head.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(hresp.Body)
+	hresp.Body.Close()
+	if hresp.StatusCode != http.StatusOK {
+		t.Fatalf("HEAD status = %d, want 200", hresp.StatusCode)
+	}
+	if len(body) != 0 {
+		t.Fatalf("HEAD returned a body of %d bytes", len(body))
+	}
+	if hresp.ContentLength != int64(len(content)) {
+		t.Fatalf("HEAD Content-Length = %d, want %d", hresp.ContentLength, len(content))
+	}
+	if hresp.Header.Get("ETag") == "" {
+		t.Fatal("HEAD response is missing the ETag header")
+	}
+}
+
+func TestConfigNormalisesDownloadPrefix(t *testing.T) {
+	for in, want := range map[string]string{
+		"download":  "/download/",
+		"/download": "/download/",
+		"download/": "/download/",
+		"":          "/download/",
+	} {
+		c := DefaultConfig()
+		c.DownloadPrefix = in
+		if err := c.Validate(); err != nil {
+			t.Fatalf("Validate(%q): %v", in, err)
+		}
+		if c.DownloadPrefix != want {
+			t.Fatalf("DownloadPrefix(%q) = %q, want %q", in, c.DownloadPrefix, want)
+		}
+	}
+}

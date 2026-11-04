@@ -18,6 +18,12 @@
 // pool until [Pool.Free]. Alloc(0) returns a non-nil empty slice and does not
 // consume a block.
 //
+// [Default] returns one process-wide pool, and the package-level [Alloc] and
+// [Free] use it. They stand in for the static MemoryPool::allocate and
+// MemoryPool::deallocate of the C++ original, which likewise shared a single
+// set of caches across the whole program. Most callers should prefer [New],
+// which yields a pool that can be flushed, inspected, and dropped on its own.
+//
 // # Size classes
 //
 // Blocks are rounded up to a size class. The classes step by 8 bytes through

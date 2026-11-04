@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/yukino-js/shita.go/yukino-cloud-storage/pkg/bundle"
 )
@@ -76,6 +77,16 @@ func (c *Config) Validate() error {
 	}
 	if c.DownloadPrefix == "" {
 		c.DownloadPrefix = defaultDownloadPrefix
+	}
+	// Normalise the prefix so both URL construction (prefix + name) and route
+	// registration (prefix + "/*name") behave; for example "download" and
+	// "/download" both become "/download/". Without this a prefix lacking the
+	// trailing slash would yield URLs such as "/downloadname".
+	if !strings.HasPrefix(c.DownloadPrefix, "/") {
+		c.DownloadPrefix = "/" + c.DownloadPrefix
+	}
+	if !strings.HasSuffix(c.DownloadPrefix, "/") {
+		c.DownloadPrefix += "/"
 	}
 	if c.BundleFormat == "" {
 		c.BundleFormat = defaultBundleFormat

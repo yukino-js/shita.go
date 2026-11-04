@@ -294,6 +294,45 @@ func TestConcurrentFlushAndAppend(t *testing.T) {
 	}
 }
 
+func TestConcurrentStopWaitsForDrain(t *testing.T) {
+	dir := t.TempDir()
+	base := filepath.Join(dir, "app")
+	backend := newAsync(t, AsyncOptions{
+		Basename:      base,
+		RollSize:      1 << 20,
+		FlushInterval: time.Hour,
+	})
+	if err := backend.Start(); err != nil {
+		t.Fatal(err)
+	}
+	const records = 500
+	for i := 0; i < records; i++ {
+		if _, err := backend.Write([]byte("record-" + strconv.Itoa(i) + "\n")); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// Every concurrent Stop must block until the drain has finished; a Stop
+	// that returned early could observe the file before the last records
+	// were written.
+	var group sync.WaitGroup
+	group.Add(3)
+	for i := 0; i < 3; i++ {
+		go func() {
+			defer group.Done()
+			if err := backend.Stop(); err != nil {
+				t.Errorf("stop: %v", err)
+			}
+		}()
+	}
+	group.Wait()
+	body := joinData(readLogs(t, dir, base))
+	for i := 0; i < records; i++ {
+		if !strings.Contains(body, "record-"+strconv.Itoa(i)+"\n") {
+			t.Fatalf("missing record %d", i)
+		}
+	}
+}
+
 func newAsync(t *testing.T, opts AsyncOptions) *Async {
 	t.Helper()
 	backend, err := NewAsync(opts)

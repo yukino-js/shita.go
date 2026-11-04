@@ -139,6 +139,7 @@ type KVServer struct {
 
 	done     chan struct{}
 	doneOnce sync.Once
+	applyWG  sync.WaitGroup
 	logger   *slog.Logger
 }
 
@@ -166,13 +167,18 @@ func NewKVServer(me, maxRaftState int, rf *raft.Raft, persister *raft.Persister,
 			kv.logger.Error("failed to restore snapshot at startup", "err", err)
 		}
 	}
-	go kv.readRaftApplyCommandLoop()
+	kv.applyWG.Go(kv.readRaftApplyCommandLoop)
 	return kv
 }
 
-// Stop terminates the apply loop. It is idempotent.
+// Stop terminates the apply loop and waits for it to exit, so no trailing
+// command execution or snapshot write can outlive the call. It is
+// idempotent. Committed-but-unprocessed messages are not lost: after a
+// restart Raft replays everything beyond the persisted snapshot point and
+// the deduplication table keeps execution exactly-once.
 func (kv *KVServer) Stop() {
 	kv.doneOnce.Do(func() { close(kv.done) })
+	kv.applyWG.Wait()
 }
 
 // Get serves a linearizable read. Like the C++ original (and 6.824), the
@@ -294,6 +300,13 @@ func (kv *KVServer) PutAppend(ctx context.Context, args *PutAppendArgs) (*PutApp
 // executing committed commands and installing snapshots.
 func (kv *KVServer) readRaftApplyCommandLoop() {
 	for {
+		// Prefer termination when Stop and a pending message are both
+		// ready, so a busy apply channel cannot delay shutdown.
+		select {
+		case <-kv.done:
+			return
+		default:
+		}
 		select {
 		case msg := <-kv.applyChan:
 			if msg.CommandValid {

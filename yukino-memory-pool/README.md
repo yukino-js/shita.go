@@ -14,6 +14,18 @@ pool.Free(buf)
 
 Import path: `github.com/yukino-js/shita.go/yukino-memory-pool`.
 
+The package-level `Alloc` and `Free` use one shared default pool and stand in
+for the C++ static `MemoryPool::allocate` and `MemoryPool::deallocate`:
+
+```go
+buf := yukino_mempool.Alloc(24)
+yukino_mempool.Free(buf)
+```
+
+Prefer `New` when a caller wants a pool it can flush, inspect with `Stats`, or
+drop on its own; everything that shares the default pool shares its caches and
+its counters.
+
 ## Layout
 
 ```
@@ -36,6 +48,16 @@ collection time; a batch left behind there forces the next allocation to cut
 a new span. The pool instead keeps a fixed slice of shards, sized to
 `GOMAXPROCS` when the pool is created, and every cached block stays reachable
 until it is flushed or handed out.
+
+A caller picks its shard from the address of a local variable, which lies on
+its own stack. The choice is stable per goroutine and touches nothing shared,
+which replaces the shared round-robin counter that otherwise serialised every
+`Alloc` and `Free` on one cache line and made the pool slower as callers were
+added. Two goroutines can still land on the same shard, so the lock is taken
+with `TryLock` and a collision redirects to a neighbouring shard rather than
+blocking; blocking is what made the scheduler park and wake goroutines on the
+fast path. The allocation counters are plain integers under that same lock, so
+a cached `Alloc` or `Free` performs no atomic write at all.
 
 Blocks are carved out of a single `make` of the span, not out of `mmap`.
 Dropping the span's slice is what returns the storage to the runtime. The
